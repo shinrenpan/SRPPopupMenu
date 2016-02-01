@@ -9,9 +9,8 @@
 
 A dragable, easy customizable, popup menu.
 
-Online [Demo][1] power by [appetize][2]
-
-![](README/ScreenShot.png)
+<iframe src="https://appetize.io/embed/u3ppurce2xgyup7r58q9hpxjp0?device=iphone6&scale=75&autoplay=false&orientation=portrait&deviceColor=black" width="312px" height="653px" frameborder="0" scrolling="no">
+</iframe>
 
 
 # Useage
@@ -121,6 +120,4 @@ Also see [DemoMenu][3] class.
 
 
 
-[1]: https://appetize.io/app/u3ppurce2xgyup7r58q9hpxjp0 "Demo"
-[2]: https://appetize.io "appetize"
 [3]: Demo/DemoMenu.m "DemoMenu"
