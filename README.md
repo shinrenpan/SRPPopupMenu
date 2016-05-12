@@ -9,15 +9,15 @@
 
 A dragable, easy customizable, popup menu.
 
-Online [Demo][1] power by [appetize][2]
+Online [Demo][1] powered by [appetize][2]
 
 ![](README/ScreenShot.png)
 
 
-# Useage
-You should use your own menu, but not SRPPopupMenu.
+# Usage
+You should use your own menu, not SRPPopupMenu.
 
-Follow the step to create your custom menu or reference the [DemoMenu][3] class.
+Follow the steps to create your custom menu or reference the [DemoMenu][3] class.
 
 
 ## Step1
@@ -43,7 +43,7 @@ Override the method `awakeFromNib` and setting the animation properties.
 
 
 ## Step2
-Create a xib file named as your custom menu class name.
+Create a xib file named with your custom menu class name.
 
 Disable the AutoLayout and Size-Class.
 
@@ -98,7 +98,7 @@ The SRPPopupMenu using NSNotification to handle button clicked,
 
 
 # Handle menu open / close
-If you want to handle the menu open / close, you must implementing the SRPPopupMenuProtocol methods.
+If you want to handle the menu open / close, you must implement the SRPPopupMenuProtocol methods.
 
 Also see [DemoMenu][3] class.
 
