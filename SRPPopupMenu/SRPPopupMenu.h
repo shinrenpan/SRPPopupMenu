@@ -1,12 +1,12 @@
 //
-//  SRPPopupMenu.h
-//  SRPPopupMenu
+//  Copyright (c) 2017年 shinren.pan@gmail.com All rights reserved.
 //
-//  Created by Shinren Pan on 2016/1/22.
-//  Copyright © 2016年 Shinren Pan. All rights reserved.
+//  Version: 1.0.1.20180104
 //
 
 #import <UIKit/UIKit.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  *  Button clicked notification.
@@ -60,42 +60,42 @@ extern NSString * const SRPPopupMenuButtonClickedNotification;
 /**
  *  Main button.
  */
-@property (nonatomic, weak) IBOutlet UIButton *mainButton;
+@property (nonatomic, weak) IBOutlet UIButton * _Nullable mainButton;
 
 /**
- *  Other buttons.
+ *  Action buttons.
  */
-@property (nonatomic, strong) IBOutletCollection(UIButton) NSArray *otherButtons;
+@property (nonatomic, strong) IBOutletCollection(UIButton) NSArray * _Nullable actionButtons;
 
 /**
- *  Other buttons animation duration time.
+ *  Main button animation duration time, default is 0.5
  */
-@property (nonatomic, assign) CGFloat otherButtonsAnimationDuration;
+@property (nonatomic, assign) IBInspectable CGFloat mainButtonAnimationDuration;
 
 /**
- *  Other buttons animation damping effect.
+ *  Main button animation damping effect, default is 0.6
  */
-@property (nonatomic, assign) CGFloat otherButtonsAnimationDamping;
+@property (nonatomic, assign) IBInspectable CGFloat mainButtonAnimationDamping;
 
 /**
- *  Other buttons start position start angle.
+ *  Action buttons animation duration time, default is 0.5
  */
-@property (nonatomic, assign) CGFloat otherButtonsPosionStartAngle;
+@property (nonatomic, assign) IBInspectable CGFloat actionButtonsAnimationDuration;
 
 /**
- *  Other buttons distance from center.
+ *  Action buttons animation damping effect, default is 0.4
  */
-@property (nonatomic, assign) CGFloat othersButtonDistanceFromCenter;
+@property (nonatomic, assign) IBInspectable CGFloat actionButtonsAnimationDamping;
 
 /**
- *  Main button animation duration time.
+ *  Action buttons start position start angle, default = -90 (Top)
  */
-@property (nonatomic, assign) CGFloat mainButtonAnimationDuration;
+@property (nonatomic, assign) IBInspectable CGFloat actionButtonsPosionStartAngle;
 
 /**
- *  Main button animation damping effect.
+ *  Action buttons distance from center, default = 120.0
  */
-@property (nonatomic, assign) CGFloat mainButtonAnimationDamping;
+@property (nonatomic, assign) IBInspectable CGFloat actionButtonsDistanceFromCenter;
 
 
 ///-----------------------------------------------------------------------------
@@ -103,25 +103,15 @@ extern NSString * const SRPPopupMenuButtonClickedNotification;
 ///-----------------------------------------------------------------------------
 
 /**
- *  Return a singleton object subclass SRPPopupMenu.
- *
- *  @return Return a singleton object subclass SRPPopupMenu.
- */
-+ (instancetype)singleton;
-
-
-///-----------------------------------------------------------------------------
-/// @name Public methods
-///-----------------------------------------------------------------------------
-
-/**
  *  Show menu.
  */
-- (void)show;
++ (void)show;
 
 /**
  *  Hide menu.
  */
-- (void)hide;
++ (void)hide;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -1,9 +1,5 @@
 //
-//  SRPPopupMenu.m
-//  SRPPopupMenu
-//
-//  Created by Shinren Pan on 2016/1/22.
-//  Copyright © 2016年 Shinren Pan. All rights reserved.
+//  Copyright (c) 2017年 shinren.pan@gmail.com All rights reserved.
 //
 
 #import "SRPPopupMenu.h"
@@ -20,12 +16,57 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
 
 @property (nonatomic, assign, getter=mainButtonPrevCenter) CGPoint mainButtonPrevCenter;
 
+@property (nonatomic, readonly, class) SRPPopupMenu *singleton;
+
 @end
 
 
 @implementation SRPPopupMenu
 
 #pragma mark - LifeCycle
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter]removeObserver:self];
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+    self = [super initWithCoder:coder];
+    
+    if (self)
+    {
+        self.mainButtonAnimationDuration     = .5f;
+        self.mainButtonAnimationDamping      = .6f;
+        self.actionButtonsAnimationDuration  = .5f;
+        self.actionButtonsAnimationDamping   = .4f;
+        self.actionButtonsPosionStartAngle   = -90.0f;
+        self.actionButtonsDistanceFromCenter = 120.0f;
+    }
+    
+    return self;
+}
+
+- (void)awakeFromNib
+{
+    [super awakeFromNib];
+    [self __setup];
+}
+
+- (void)drawRect:(CGRect)rect
+{
+    [super drawRect:rect];
+    
+    if(_menuOpened)
+    {
+        [self __openMenuWithAnimated:NO];
+    }
+    else
+    {
+        [self __closeMenuWithAnimated:NO clickedButton:nil];
+    }
+}
+
+#pragma mark - Properties Getter
 + (instancetype)singleton
 {
     static dispatch_once_t onceToken;
@@ -49,31 +90,6 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     return _singleton;
 }
 
-- (void)dealloc
-{
-    [[NSNotificationCenter defaultCenter]removeObserver:self];
-}
-
-- (void)awakeFromNib
-{
-    [self __setup];
-}
-
-- (void)drawRect:(CGRect)rect
-{
-    [super drawRect:rect];
-    
-    if(_menuOpened)
-    {
-        [self __openMenuWithAnimated:NO];
-    }
-    else
-    {
-        [self __closeMenuWithAnimated:NO clickedButton:nil];
-    }
-}
-
-#pragma mark - Properties Getter
 - (CGPoint)mainButtonPrevCenter
 {
     // 調整 mainButtonPrevCenter, 確保不會超出螢幕
@@ -125,7 +141,7 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     // 選單展開且可能按到 otherButtons
     else
     {
-        for(UIButton *button in _otherButtons)
+        for(UIButton *button in _actionButtons)
         {
             if(CGRectContainsPoint(button.frame, point))
             {
@@ -138,32 +154,31 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     return view;
 }
 
-#pragma mark - Public
-- (void)show
+#pragma mark - Class method
++ (void)show
 {
-    self.hidden = NO;
+    self.singleton.hidden = NO;
     
-    if(self.superview)
+    if(self.singleton.superview)
     {
         return;
     }
     
-    UIWindow *window      = [[UIApplication sharedApplication]windows].firstObject;
-    self.frame            = window.rootViewController.view.bounds;
-    self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.layer.zPosition  = NSUIntegerMax;
+    UIWindow *window = [[UIApplication sharedApplication]windows].firstObject;
+    self.singleton.frame = window.rootViewController.view.bounds;
+    self.singleton.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.singleton.layer.zPosition = NSUIntegerMax;
     
-    [self bringSubviewToFront:_mainButton];
-    [window.rootViewController.view addSubview:self];
+    [self.singleton bringSubviewToFront:self.singleton.mainButton];
+    [window.rootViewController.view addSubview:self.singleton];
 }
 
-- (void)hide
++ (void)hide
 {
-    self.hidden = YES;
+    self.singleton.hidden = YES;
 }
 
 #pragma mark - Private
-#pragma mark Setup
 - (void)__setup
 {
     _mainButtonPrevCenter = _mainButton.center;
@@ -175,23 +190,22 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     
     [self addGestureRecognizer:^{
         return [[UITapGestureRecognizer alloc]initWithTarget:self
-                                                      action:@selector(__actionForSelfTapping:)];
+                                                      action:@selector(__tapSelf:)];
     }()];
     
-    [_mainButton addTarget:self action:@selector(__actionForMainButtonDragging:forEvent:)
+    [_mainButton addTarget:self action:@selector(__draggingMainButton:forEvent:)
           forControlEvents:UIControlEventTouchDragInside];
     
-    [_mainButton addTarget:self action:@selector(__actionForMainButtonEndDragOrClicked:)
+    [_mainButton addTarget:self action:@selector(__dragEndOrClickMainButton:)
           forControlEvents:UIControlEventTouchUpInside];
     
-    [_otherButtons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger idx, BOOL *stop) {
-        [button addTarget:self action:@selector(__actionForOtherButtonsClicked:)
+    [_actionButtons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger idx, BOOL *stop) {
+        [button addTarget:self action:@selector(__clickActionButton:)
          forControlEvents:UIControlEventTouchUpInside];
     }];
 }
 
-#pragma mark Action for tapping in SRPPopMenu self
-- (void)__actionForSelfTapping:(UITapGestureRecognizer *)gesture
+- (void)__tapSelf:(UITapGestureRecognizer *)gesture
 {
     if(!_menuOpened)
     {
@@ -201,8 +215,7 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     [self __closeMenuWithAnimated:YES clickedButton:nil];
 }
 
-#pragma mark Action for mainButton draggin.
-- (void)__actionForMainButtonDragging:(UIButton *)button forEvent:(UIEvent *)event
+- (void)__draggingMainButton:(UIButton *)button forEvent:(UIEvent *)event
 {
     // 選單展開時, mainButton 不能拖動
     if(_menuOpened)
@@ -215,25 +228,22 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     button.center  = [touch locationInView:self];
 }
 
-#pragma mark Action for mainButton end drag or clicked
-- (void)__actionForMainButtonEndDragOrClicked:(UIButton *)button
+- (void)__dragEndOrClickMainButton:(UIButton *)button
 {
     // Drag 結束
     if(_dragging)
     {
-        _dragging = NO;
-        
         _mainButtonPrevCenter = ^{
             CGFloat x = 0.0;
             CGFloat y = _mainButton.center.y;
             
-            // 拖曳在左半邊, 向左
+            // 拖曳結束在左半邊, 向左
             if(_mainButton.center.x < CGRectGetMidX(self.bounds))
             {
                 x = CGRectGetMidX(_mainButton.bounds);
             }
             
-            // 拖曳在右半邊, 向右
+            // 拖曳結束右半邊, 向右
             else
             {
                 x = CGRectGetMaxX(self.bounds) - CGRectGetMidX(_mainButton.bounds);
@@ -242,8 +252,12 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
             return CGPointMake(x, y);
         }();
         
-        void (^animations)() = ^{
+        void (^animations)(void) = ^{
             _mainButton.center = self.mainButtonPrevCenter;
+        };
+        
+        void (^completion)(BOOL) = ^(BOOL finished){
+            self.dragging = NO;
         };
         
         [UIView animateWithDuration:_mainButtonAnimationDuration
@@ -252,7 +266,7 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
               initialSpringVelocity:0.0
                             options:UIViewAnimationOptionCurveEaseInOut
                          animations:animations
-                         completion:nil];
+                         completion:completion];
     }
     
     // 選單展開且點到 mainButton
@@ -268,13 +282,11 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     }
 }
 
-#pragma mark Action for otherButtons clicked
-- (void)__actionForOtherButtonsClicked:(UIButton *)button
+- (void)__clickActionButton:(UIButton *)button
 {
     [self __closeMenuWithAnimated:YES clickedButton:button];
 }
 
-#pragma mark Menu open animation
 - (void)__openMenuWithAnimated:(BOOL)animated
 {
     if(_animating)
@@ -282,154 +294,64 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
         return;
     }
     
-    _animating = YES;
-    
     [self __menuWillOpen];
     
-    void (^otherButtonsAnimations)() = ^{
+    void (^mainButtonAnimations)(void) = ^{
+        _mainButton.center = self.center;
+    };
+    
+    void (^actionButtonsAnimations)(void) = ^{
         CGPoint startPoint = self.center;
         
-        for(UIButton *button in _otherButtons)
+        for(UIButton *button in _actionButtons)
         {
             button.alpha   = 1.0;
             NSUInteger tag = button.tag - 1;
-            CGFloat angle  = 360.0 / _otherButtons.count;
-            CGFloat degree = ((angle * tag) + _otherButtonsPosionStartAngle) * (M_PI / 180);
-            CGFloat x      = startPoint.x + cosf(degree) * _othersButtonDistanceFromCenter;
-            CGFloat y      = startPoint.y + sinf(degree) * _othersButtonDistanceFromCenter;
+            CGFloat angle  = 360.0 / _actionButtons.count;
+            CGFloat degree = ((angle * tag) + _actionButtonsPosionStartAngle) * (M_PI / 180);
+            CGFloat x      = startPoint.x + cosf(degree) * _actionButtonsDistanceFromCenter;
+            CGFloat y      = startPoint.y + sinf(degree) * _actionButtonsDistanceFromCenter;
             
             button.center = CGPointMake(x, y);
         }
     };
     
-    if(!animated)
-    {
-        _mainButton.center = self.center;
-        otherButtonsAnimations();
-        _animating  = NO;
-        _menuOpened = YES;
-        
-        [self __menuDidOpen];
-        
-        return;
-    }
-    
-    void (^mainButtonAnimations)() = ^{
-        _mainButton.center = self.center;
-    };
-    
-    [UIView animateWithDuration:_mainButtonAnimationDuration
-                          delay:0.0
-         usingSpringWithDamping:_mainButtonAnimationDamping
-          initialSpringVelocity:0.0
-                        options:UIViewAnimationOptionCurveEaseInOut
-                     animations:mainButtonAnimations
-                     completion:nil];
-    
-    void (^animationsCompletion)(BOOL finished) = ^(BOOL finished) {
-        _animating  = NO;
-        _menuOpened = YES;
-        
+    void (^animationsCompletion)(BOOL) = ^(BOOL finished) {
         [self __menuDidOpen];
     };
     
-    // 先移動 mainButton 再展開 otherButtons
-    // 所以 delay = _mainButtonAnimationDuration
-    [UIView animateWithDuration:_otherButtonsAnimationDuration
-                          delay:_mainButtonAnimationDuration
-         usingSpringWithDamping:_otherButtonsAnimationDamping
-          initialSpringVelocity:0.0
-                        options:UIViewAnimationOptionCurveEaseInOut
-                     animations:otherButtonsAnimations
-                     completion:animationsCompletion];
-}
-
-#pragma mark Menu close animation
-- (void)__closeMenuWithAnimated:(BOOL)animated clickedButton:(UIButton *)button
-{
-    if(_animating)
+    if (animated)
     {
-        return;
+        [UIView animateWithDuration:_mainButtonAnimationDuration
+                              delay:0.0
+             usingSpringWithDamping:_mainButtonAnimationDamping
+              initialSpringVelocity:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:mainButtonAnimations
+                         completion:nil];
+        
+        // 先移動 mainButton 再展開 otherButtons
+        // 所以 delay = _mainButtonAnimationDuration
+        [UIView animateWithDuration:_actionButtonsAnimationDuration
+                              delay:_mainButtonAnimationDuration
+             usingSpringWithDamping:_actionButtonsAnimationDamping
+              initialSpringVelocity:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:actionButtonsAnimations
+                         completion:animationsCompletion];
     }
-    
-    _animating = YES;
-    
-    [self __menuWillClose];
-    
-    void (^otherButtonsAnimations)() = ^{
-        for(UIButton *button in _otherButtons)
-        {
-            button.center = self.center;
-            button.alpha  = 0.0;
-        }
-    };
-    
-    if(!animated)
+    else
     {
-        otherButtonsAnimations();
-        
-        _mainButton.center = self.mainButtonPrevCenter;
-        _animating         = NO;
-        _menuOpened        = NO;
-        
-        [self __menuDidClose];
-        
-        if(button)
-        {
-            [[NSNotificationCenter defaultCenter]
-             postNotificationName:SRPPopupMenuButtonClickedNotification object:@(button.tag)];
-        }
-        
-        return;
+        mainButtonAnimations();
+        actionButtonsAnimations();
+        animationsCompletion(true);
     }
-    
-    [UIView animateWithDuration:_otherButtonsAnimationDuration
-                          delay:0.0
-         usingSpringWithDamping:_otherButtonsAnimationDamping
-          initialSpringVelocity:0.0
-                        options:UIViewAnimationOptionCurveEaseInOut
-                     animations:otherButtonsAnimations
-                     completion:nil];
-    
-    void (^mainButtonAnimations)() = ^{
-        _mainButton.center = self.mainButtonPrevCenter;
-    };
-    
-    void (^animationsCompletion)(BOOL finished) = ^(BOOL finished) {
-        _animating  = NO;
-        _menuOpened = NO;
-        
-        [self __menuDidClose];
-        
-        if(button)
-        {
-            [[NSNotificationCenter defaultCenter]
-             postNotificationName:SRPPopupMenuButtonClickedNotification object:@(button.tag)];
-        }
-    };
-    
-    // 先關閉 otherButtons 再移動 mainButton
-    // 所以 delay = _otherButtonsAnimationDuration
-    [UIView animateWithDuration:_mainButtonAnimationDuration
-                          delay:_otherButtonsAnimationDuration
-         usingSpringWithDamping:_mainButtonAnimationDamping
-          initialSpringVelocity:0.0
-                        options:UIViewAnimationOptionCurveEaseInOut
-                     animations:mainButtonAnimations
-                     completion:animationsCompletion];
 }
 
-#pragma mark Device orientation
-- (void)__deviceOrientationChanged:(NSNotification *)sender
-{
-    self.frame = self.superview.bounds;
-    
-    [self setNeedsDisplay];
-}
-
-#pragma mark Menu will open notice
 - (void)__menuWillOpen
 {
+    _animating = YES;
+    
     if(![self conformsToProtocol:@protocol(SRPPopupMenuProtocol)] ||
        ![self respondsToSelector:@selector(menuWillOpen)])
     {
@@ -439,9 +361,11 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     [self performSelector:@selector(menuWillOpen)];
 }
 
-#pragma mark Menu opened notice
 - (void)__menuDidOpen
 {
+    _animating  = NO;
+    _menuOpened = YES;
+    
     if(![self conformsToProtocol:@protocol(SRPPopupMenuProtocol)] ||
        ![self respondsToSelector:@selector(menuDidOpen)])
     {
@@ -451,9 +375,69 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     [self performSelector:@selector(menuDidOpen)];
 }
 
-#pragma mark Menu will close notice
+- (void)__closeMenuWithAnimated:(BOOL)animated clickedButton:(UIButton *)button
+{
+    if(_animating)
+    {
+        return;
+    }
+    
+    [self __menuWillClose];
+    
+    void (^mainButtonAnimations)(void) = ^{
+        _mainButton.center = self.mainButtonPrevCenter;
+    };
+    
+    void (^actionButtonsAnimations)(void) = ^{
+        for(UIButton *button in _actionButtons)
+        {
+            button.center = self.center;
+            button.alpha  = 0.0;
+        }
+    };
+    
+    void (^animationsCompletion)(BOOL) = ^(BOOL finished) {
+        [self __menuDidClose];
+        
+        if(button)
+        {
+            [[NSNotificationCenter defaultCenter]
+             postNotificationName:SRPPopupMenuButtonClickedNotification object:button];
+        }
+    };
+    
+    if (animated)
+    {
+        [UIView animateWithDuration:_actionButtonsAnimationDuration
+                              delay:0.0
+             usingSpringWithDamping:_actionButtonsAnimationDamping
+              initialSpringVelocity:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:actionButtonsAnimations
+                         completion:nil];
+        
+        // 先關閉 otherButtons 再移動 mainButton
+        // 所以 delay = _otherButtonsAnimationDuration
+        [UIView animateWithDuration:_mainButtonAnimationDuration
+                              delay:_actionButtonsAnimationDuration
+             usingSpringWithDamping:_mainButtonAnimationDamping
+              initialSpringVelocity:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:mainButtonAnimations
+                         completion:animationsCompletion];
+    }
+    else
+    {
+        actionButtonsAnimations();
+        mainButtonAnimations();
+        animationsCompletion(NO);
+    }
+}
+
 - (void)__menuWillClose
 {
+    _animating = YES;
+    
     if(![self conformsToProtocol:@protocol(SRPPopupMenuProtocol)] ||
        ![self respondsToSelector:@selector(menuWillClose)])
     {
@@ -463,9 +447,11 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     [self performSelector:@selector(menuWillClose)];
 }
 
-#pragma mark Menu closed notice
 - (void)__menuDidClose
 {
+    _animating  = NO;
+    _menuOpened = NO;
+    
     if(![self conformsToProtocol:@protocol(SRPPopupMenuProtocol)] ||
        ![self respondsToSelector:@selector(menuDidClose)])
     {
@@ -473,6 +459,13 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     }
     
     [self performSelector:@selector(menuDidClose)];
+}
+
+- (void)__deviceOrientationChanged:(NSNotification *)sender
+{
+    self.frame = self.superview.bounds;
+    
+    [self setNeedsDisplay];
 }
 
 @end

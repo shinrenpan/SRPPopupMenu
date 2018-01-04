@@ -1,9 +1,5 @@
 //
-//  ViewController.m
-//  Demo
-//
-//  Created by Shinren Pan on 2016/1/22.
-//  Copyright © 2016年 Shinren Pan. All rights reserved.
+//  Copyright (c) 2017年 shinren.pan@gmail.com All rights reserved.
 //
 
 #import "DemoMenu.h"
@@ -37,8 +33,8 @@
 
 - (void)__menuButtonClickedNotification:(NSNotification *)sender
 {
-    NSNumber *tag = sender.object;
-    _label.text   = [NSString stringWithFormat:@"You clicked at %@", tag];
+    UIButton *button = sender.object;
+    _label.text = [NSString stringWithFormat:@"You clicked at %@", button.titleLabel.text];
 }
 
 @end

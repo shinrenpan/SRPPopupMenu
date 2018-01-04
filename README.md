@@ -9,43 +9,28 @@
 
 A dragable, easy customizable, popup menu.
 
-Online [Demo][1] powered by [appetize][2]
-
-![](README/ScreenShot.png)
+![](README/ScreenShot.gif)
 
 
-# Usage
+## Install
+Use Carthage or drag SRPPopupMenu.h/.m into your project.
+
+
+## Usage
 You should use your own menu, not SRPPopupMenu.
 
 Follow the steps to create your custom menu or reference the [DemoMenu][3] class.
 
 
-## Step1
+
+### Step1
 Create your custom menu subclass SRPPopupMenu.
 
-Override the method `awakeFromNib` and setting the animation properties.
 
-> **Don't forget to call `[super awakeFromNib]`.**
+### Step2
+Create a xib file named as your custom menu class name.
 
-```ObjC
-- (void)awakeFromNib
-{
-    [super awakeFromNib];
-    
-    self.otherButtonsAnimationDuration  = .5f;
-    self.otherButtonsAnimationDamping   = .4f;
-    self.otherButtonsPosionStartAngle   = -90.0f;
-    self.othersButtonDistanceFromCenter = 120.0f;
-    self.mainButtonAnimationDuration    = .5f;
-    self.mainButtonAnimationDamping     = .6f;
-}
-```
-
-
-## Step2
-Create a xib file named with your custom menu class name.
-
-Disable the AutoLayout and Size-Class.
+**Disable** the AutoLayout and Size-Class.
 
 ![](README/1.png)
 
@@ -57,26 +42,42 @@ Drag a button to be MainButton, and connect to IBOutlet.
 
 Drag some buttons to be otherButtons, and conncet to IBCollections.
 
-> **Important: you must to set the button tag, start 1 to N.**
-
 ![](README/3.png)
 
 
 Now you can use your custom menu.
 
-```Objc
+```objc
 // Show the menu
-[[YourMenu singleton]show];
+[YourMenu show];
 
 // Hide the menu
-[[YourMenu singleton]hide];
+[YourMenu hide];
 ```
 
+## Handle animation duration, damping
 
-# Handle button clicked
+**Setup the follow property programmatically or on xib file**
+
+```objc
+- (void)awakeFromNib
+{
+    [super awakeFromNib];
+    self.mainButtonAnimationDuration = 0.4;
+    self.mainButtonAnimationDamping = 0.4;
+    self.actionButtonsAnimationDuration = 0.4;
+    self.actionButtonsAnimationDamping = 0.4;
+    self.actionButtonsPosionStartAngle = -90.0;
+    self.actionButtonsDistanceFromCenter = 120.0;
+}
+```
+
+![](README/4.png)
+
+## Handle button clicked
 The SRPPopupMenu using NSNotification to handle button clicked,
 
-```ObjC
+```objc
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -91,18 +92,17 @@ The SRPPopupMenu using NSNotification to handle button clicked,
 
 - (void)__menuButtonClickedNotification:(NSNotification *)sender
 {
-    NSNumber *tag = sender.object;
-    NSLog(@"%@", tag);
+    UIButton *button = sender.object;
 }
 ```
 
 
-# Handle menu open / close
+## Handle menu open / close
 If you want to handle the menu open / close, you must implement the SRPPopupMenuProtocol methods.
 
 Also see [DemoMenu][3] class.
 
-```ObjC
+```objc
 // Menu will open
 - (void)menuWillOpen
 
@@ -120,7 +120,4 @@ Also see [DemoMenu][3] class.
 
 
 
-
-[1]: https://appetize.io/app/u3ppurce2xgyup7r58q9hpxjp0 "Demo"
-[2]: https://appetize.io "appetize"
-[3]: Demo/DemoMenu.m "DemoMenu"
+[3]: Demo/CustomMenu/DemoMenu.m "DemoMenu"

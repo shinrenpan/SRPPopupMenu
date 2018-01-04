@@ -5,76 +5,77 @@
 
 # SRPPopupMenu
 
-可拖動, 容易客製化的彈跳選單.
+可拖動, 簡易客製化的彈跳選單.
 
-線上 [Demo][1] power by [appetize][2]
-
-![](ScreenShot.png)
+![](ScreenShot.gif)
 
 
-# 使用
-你應該使用你客製化的選單, 而不是使用 SRPPopupMenu.
-
-依照以下步驟完成你的客製化選單, 或是參考 [DemoMenu][3] class.
+## 安裝
+使用 Carthage 或是將 SRPPopupMenu.h/.m 拖拉進你的專案.
 
 
-## 步驟1
-創建你的選單 class 並繼承 SRPPopupMenu.
+## 使用
+你應該使用你的客製化 menu class 而不是使用 SRPPopupMenu.
 
-覆寫 `awakeFromNib` method, 並設置相關動畫的屬性.
-
-> **別忘記呼叫 `[super awakeFromNib]`.**
-
-```ObjC
-- (void)awakeFromNib
-{
-    [super awakeFromNib];
-    
-    self.otherButtonsAnimationDuration  = .5f;
-    self.otherButtonsAnimationDamping   = .4f;
-    self.otherButtonsPosionStartAngle   = -90.0f;
-    self.othersButtonDistanceFromCenter = 120.0f;
-    self.mainButtonAnimationDuration    = .5f;
-    self.mainButtonAnimationDamping     = .6f;
-}
-```
+按照下面步驟建立你自己的客製化選單, 或是參考 [DemoMenu][3] class.
 
 
-## 步驟2
-創建一個 xib 檔案, 並命名與你所創建的選單 class 名稱相同.
 
-取消 xib 的 AutoLayout 及 Size-Class.
+### 步驟1
+創建一個繼承 SRPPopupMenu 的 class.
+
+
+### 步驟2
+創建一個 xib 檔案, 並命名跟步驟1 class 相同主檔名/
+
+**取消使用** AutoLayout 跟 Size-Class.
 
 ![](1.png)
 
 
-拖拉一個按鈕當作 MainButton, 並且設置 IBOutlet 關聯.
+拖拉一個按鈕, 當 Main button, 並關聯 IBOutlet.
 
 ![](2.png)
 
 
-拖拉多個按鈕當作 OtherButtons, 並設置 IBCollections 關聯.
-
-> **重要: 你必須設置 OtherButtons 的 tag, 從 1 到 N.**
+拖拉幾個按鈕, 當 Action button, 並關聯 IBOutlet
 
 ![](3.png)
 
 
-設置完後就可開始使用你的客製化選單了.
+設置完成就可以使用你的選單了.
 
-```Objc
+```objc
 // Show the menu
-[[YourMenu singleton]show];
+[YourMenu show];
 
 // Hide the menu
-[[YourMenu singleton]hide];
+[YourMenu hide];
 ```
 
+## 處理按鈕動畫時間與彈跳
 
-# 處理按鈕點擊
-SRPPopupMenu 使用 NSNotification 來監聽按鈕點擊.
+**手動設置以下 Property, 或是在 xib 檔案設置**
 
-```ObjC
+```objc
+- (void)awakeFromNib
+{
+    [super awakeFromNib];
+    self.mainButtonAnimationDuration = 0.4;
+    self.mainButtonAnimationDamping = 0.4;
+    self.actionButtonsAnimationDuration = 0.4;
+    self.actionButtonsAnimationDamping = 0.4;
+    self.actionButtonsPosionStartAngle = -90.0;
+    self.actionButtonsDistanceFromCenter = 120.0;
+}
+```
+
+![](4.png)
+
+## 處理按鈕點擊事件
+使用 NSNotification 監聽按鈕點擊事件.
+
+```objc
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -89,17 +90,17 @@ SRPPopupMenu 使用 NSNotification 來監聽按鈕點擊.
 
 - (void)__menuButtonClickedNotification:(NSNotification *)sender
 {
-    NSNumber *tag = sender.object;
-    NSLog(@"%@", tag);
+    UIButton *button = sender.object;
 }
 ```
 
 
-# 處理選單開啟 / 關閉
-如果你想處理選單開啟或是關閉的過程, 你應該實作 SRPPopupMenuProtocol method.  
-或是參考 [DemoMenu][3].
+## 處理選單開啟/關閉
+實作 SRPPopupMenuProtocol method, 並監聽即可.
 
-```ObjC
+可參考 [DemoMenu][3] class.
+
+```objc
 // Menu will open
 - (void)menuWillOpen
 
@@ -117,7 +118,4 @@ SRPPopupMenu 使用 NSNotification 來監聽按鈕點擊.
 
 
 
-
-[1]: https://appetize.io/app/u3ppurce2xgyup7r58q9hpxjp0 "Demo"
-[2]: https://appetize.io "appetize"
-[3]: ../Demo/DemoMenu.m "DemoMenu"
+[3]: Demo/CustomMenu/DemoMenu.m "DemoMenu"

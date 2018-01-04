@@ -1,9 +1,5 @@
 //
-//  AppDelegate.h
-//  Demo
-//
-//  Created by Shinren Pan on 2016/1/22.
-//  Copyright © 2016年 Shinren Pan. All rights reserved.
+//  Copyright (c) 2017年 shinren.pan@gmail.com All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
@@ -12,6 +8,4 @@
 
 @property (strong, nonatomic) UIWindow *window;
 
-
 @end
-
