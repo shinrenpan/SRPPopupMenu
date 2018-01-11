@@ -193,14 +193,18 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
                                                       action:@selector(__tapSelf:)];
     }()];
     
-    [_mainButton addTarget:self action:@selector(__draggingMainButton:forEvent:)
-          forControlEvents:UIControlEventTouchDragInside];
+    [_mainButton addGestureRecognizer:^{
+        return [[UIPanGestureRecognizer alloc]initWithTarget:self
+                                                      action:@selector(__mainButtonDragging:)];
+    }()];
     
-    [_mainButton addTarget:self action:@selector(__dragEndOrClickMainButton:)
+    [_mainButton addTarget:self
+                    action:@selector(__mainButtonClicked:)
           forControlEvents:UIControlEventTouchUpInside];
     
     [_actionButtons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger idx, BOOL *stop) {
-        [button addTarget:self action:@selector(__clickActionButton:)
+        [button addTarget:self
+                   action:@selector(__actionButtonsClicked:)
          forControlEvents:UIControlEventTouchUpInside];
     }];
 }
@@ -215,7 +219,7 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     [self __closeMenuWithAnimated:YES clickedButton:nil];
 }
 
-- (void)__draggingMainButton:(UIButton *)button forEvent:(UIEvent *)event
+- (void)__mainButtonDragging:(UIPanGestureRecognizer *)sender
 {
     // 選單展開時, mainButton 不能拖動
     if(_menuOpened)
@@ -223,15 +227,11 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
         return;
     }
     
-    _dragging      = YES;
-    UITouch *touch = [[event allTouches]anyObject];
-    button.center  = [touch locationInView:self];
-}
-
-- (void)__dragEndOrClickMainButton:(UIButton *)button
-{
-    // Drag 結束
-    if(_dragging)
+    if (sender.state == UIGestureRecognizerStateChanged)
+    {
+        _mainButton.center = [sender locationInView:self];
+    }
+    else
     {
         _mainButtonPrevCenter = ^{
             CGFloat x = 0.0;
@@ -268,9 +268,12 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
                          animations:animations
                          completion:completion];
     }
-    
+}
+
+- (void)__mainButtonClicked:(UIButton *)button
+{
     // 選單展開且點到 mainButton
-    else if(_menuOpened)
+    if(_menuOpened)
     {
         [self __closeMenuWithAnimated:YES clickedButton:nil];
     }
@@ -282,7 +285,7 @@ NSString * const SRPPopupMenuButtonClickedNotification = @"SRPPopupMenuButtonCli
     }
 }
 
-- (void)__clickActionButton:(UIButton *)button
+- (void)__actionButtonsClicked:(UIButton *)button
 {
     [self __closeMenuWithAnimated:YES clickedButton:button];
 }

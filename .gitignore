@@ -24,3 +24,5 @@ Pods/
 
 ### Carthage ###
 Carthage/
+*.zip
+
